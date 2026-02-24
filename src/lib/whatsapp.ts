@@ -22,7 +22,7 @@ export function getWhatsAppLink(customer: Customer): string {
 }
 
 export function openWhatsApp(customer: Customer) {
-  window.open(getWhatsAppLink(customer), "_blank");
+  window.open(getWhatsAppLink(customer), "_blank", "noopener,noreferrer");
 }
 
 export function startCampaign(customers: Customer[], onProgress?: (i: number) => void) {
