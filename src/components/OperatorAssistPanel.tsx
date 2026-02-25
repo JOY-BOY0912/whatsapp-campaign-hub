@@ -1,9 +1,10 @@
-import { Customer, getWhatsAppLink } from "@/lib/whatsapp";
+import { ScoredCustomer } from "@/lib/scoring";
 import { SegmentBadge } from "./SegmentBadge";
-import { ExternalLink, CheckCircle2, SkipForward, XCircle, User, Phone, ShoppingCart, DollarSign } from "lucide-react";
+import { PriorityBadge } from "./PriorityBadge";
+import { ExternalLink, CheckCircle2, SkipForward, XCircle, User, Phone, ShoppingCart, DollarSign, Target } from "lucide-react";
 
 interface Props {
-  customer: Customer;
+  customer: ScoredCustomer;
   queueLength: number;
   currentIndex: number;
   sentCount: number;
@@ -27,7 +28,6 @@ export function OperatorAssistPanel({
   onSkip,
   onEndCampaign,
 }: Props) {
-  const cleanPhone = customer.phone.replace(/[+\s]/g, "");
   const messageTemplates: Record<string, (name: string) => string> = {
     VIP: (name) => `Hi ${name} 👑\nThanks for being our VIP customer!\nHere's a special offer just for you 🎉`,
     ACTIVE: (name) => `Hi ${name} 😊\nWe have new offers waiting for you!`,
@@ -41,7 +41,7 @@ export function OperatorAssistPanel({
         <div>
           <h2 className="text-lg font-bold text-primary">⚡ Operator Assist Mode</h2>
           <p className="text-sm text-muted-foreground">
-            Customer {currentIndex + 1} of {queueLength}
+            Customer {currentIndex + 1} of {queueLength} · Priority Queue
           </p>
         </div>
         <div className="text-right text-sm text-muted-foreground">
@@ -71,9 +71,12 @@ export function OperatorAssistPanel({
             <User className="h-4 w-4 text-muted-foreground" />
             {customer.customer_name}
           </h3>
-          <SegmentBadge segment={customer.segment} />
+          <div className="flex items-center gap-2">
+            <PriorityBadge level={customer.priorityLevel} />
+            <SegmentBadge segment={customer.segment} />
+          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Phone className="h-3.5 w-3.5" />
             <span>{customer.phone}</span>
@@ -85,6 +88,10 @@ export function OperatorAssistPanel({
           <div className="flex items-center gap-2 text-muted-foreground">
             <DollarSign className="h-3.5 w-3.5" />
             <span>₹{customer.total_spent.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Target className="h-3.5 w-3.5" />
+            <span>Score: {Math.round(customer.priorityScore)}</span>
           </div>
         </div>
       </div>
