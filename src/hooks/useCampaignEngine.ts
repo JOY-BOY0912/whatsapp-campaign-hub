@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { Customer, getWhatsAppLink } from "@/lib/whatsapp";
+import { getWhatsAppLink } from "@/lib/whatsapp";
+import { ScoredCustomer } from "@/lib/scoring";
 
 export interface CampaignLog {
   campaignId: string;
@@ -21,9 +22,9 @@ export interface Campaign {
   skippedCount: number;
 }
 
-export interface CampaignState {
+interface CampaignState {
   currentCampaign: Campaign | null;
-  campaignQueue: Customer[];
+  campaignQueue: ScoredCustomer[];
   currentIndex: number;
   logs: CampaignLog[];
   history: Campaign[];
@@ -50,65 +51,54 @@ export function useCampaignEngine() {
     (l) => l.campaignId === state.currentCampaign?.id && l.status === "skipped"
   ).length;
 
-  const remainingCount = state.currentCampaign
-    ? state.campaignQueue.length - state.currentIndex
-    : 0;
-
   const progress = state.currentCampaign
     ? Math.round(((sentCount + skippedCount) / state.campaignQueue.length) * 100)
     : 0;
 
-  const startCampaign = useCallback(
-    (name: string, segment: string, customers: Customer[]) => {
-      const filtered = customers.filter((c) => c.segment === segment);
-      if (filtered.length === 0) return;
+  const startSmartQueue = useCallback((sortedCustomers: ScoredCustomer[]) => {
+    if (sortedCustomers.length === 0) return;
 
-      const campaign: Campaign = {
-        id: crypto.randomUUID(),
-        name,
-        segment,
-        startedAt: new Date(),
-        status: "running",
-        totalCustomers: filtered.length,
-        sentCount: 0,
-        skippedCount: 0,
-      };
+    const today = new Date().toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
 
-      setState((s) => ({
-        ...s,
-        currentCampaign: campaign,
-        campaignQueue: filtered,
-        currentIndex: 0,
-      }));
-    },
-    []
-  );
+    const campaign: Campaign = {
+      id: crypto.randomUUID(),
+      name: `Smart Hybrid Campaign - ${today}`,
+      segment: "ALL",
+      startedAt: new Date(),
+      status: "running",
+      totalCustomers: sortedCustomers.length,
+      sentCount: 0,
+      skippedCount: 0,
+    };
+
+    setState((s) => ({
+      ...s,
+      currentCampaign: campaign,
+      campaignQueue: sortedCustomers,
+      currentIndex: 0,
+    }));
+  }, []);
 
   const advanceOrEnd = useCallback(() => {
     setState((s) => {
       const nextIndex = s.currentIndex + 1;
       if (nextIndex >= s.campaignQueue.length) {
-        // campaign complete
+        const allLogs = s.logs;
         const completed: Campaign = {
           ...s.currentCampaign!,
           status: "completed",
           completedAt: new Date(),
-          sentCount: s.logs.filter(
+          sentCount: allLogs.filter(
             (l) => l.campaignId === s.currentCampaign!.id && l.status === "sent"
           ).length,
-          skippedCount: s.logs.filter(
+          skippedCount: allLogs.filter(
             (l) => l.campaignId === s.currentCampaign!.id && l.status === "skipped"
           ).length,
         };
-        // recalculate with the log we just added
-        const allLogs = s.logs;
-        completed.sentCount = allLogs.filter(
-          (l) => l.campaignId === completed.id && l.status === "sent"
-        ).length;
-        completed.skippedCount = allLogs.filter(
-          (l) => l.campaignId === completed.id && l.status === "skipped"
-        ).length;
-
         return {
           ...s,
           currentCampaign: null,
@@ -197,9 +187,8 @@ export function useCampaignEngine() {
     currentCustomer,
     sentCount,
     skippedCount,
-    remainingCount,
     progress,
-    startCampaign,
+    startSmartQueue,
     openWhatsApp,
     markSent,
     skip,

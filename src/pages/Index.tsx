@@ -1,15 +1,21 @@
+import { useMemo } from "react";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useCampaignEngine } from "@/hooks/useCampaignEngine";
+import { scoreAndSort } from "@/lib/scoring";
 import { StatsCards } from "@/components/StatsCards";
-import { CampaignPanel } from "@/components/CampaignPanel";
 import { OperatorAssistPanel } from "@/components/OperatorAssistPanel";
 import { CampaignHistory } from "@/components/CampaignHistory";
 import { CustomerTable } from "@/components/CustomerTable";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { MessageSquare, Loader2, Rocket } from "lucide-react";
 
 const Index = () => {
   const { data: customers, isLoading, isError } = useCustomers();
   const engine = useCampaignEngine();
+
+  const scoredCustomers = useMemo(() => {
+    if (!customers) return [];
+    return scoreAndSort(customers);
+  }, [customers]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,7 +27,7 @@ const Index = () => {
           <div>
             <h1 className="text-xl font-bold tracking-tight">Agency Marketing Campaign Dashboard</h1>
             <p className="text-sm text-muted-foreground">
-              Manage and send WhatsApp campaigns like a marketing agency
+              Hybrid automation · Smart priority queue · WhatsApp campaigns
             </p>
           </div>
         </div>
@@ -39,13 +45,27 @@ const Index = () => {
           </div>
         ) : (
           <>
-            <StatsCards customers={customers!} />
+            <StatsCards customers={scoredCustomers} />
 
-            <CampaignPanel
-              customers={customers!}
-              onStartCampaign={(name, segment) => engine.startCampaign(name, segment, customers!)}
-              isRunning={!!engine.currentCampaign}
-            />
+            {/* Start Smart Queue button */}
+            {!engine.currentCampaign && (
+              <div className="rounded-xl border border-border bg-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold">🧠 Smart Priority Queue</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {scoredCustomers.length} customers auto-scored and sorted by priority. Start the operator workflow.
+                  </p>
+                </div>
+                <button
+                  onClick={() => engine.startSmartQueue(scoredCustomers)}
+                  disabled={scoredCustomers.length === 0}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  <Rocket className="h-4 w-4" />
+                  Start Smart Queue ({scoredCustomers.length})
+                </button>
+              </div>
+            )}
 
             {engine.currentCampaign && engine.currentCustomer && (
               <OperatorAssistPanel
@@ -64,7 +84,7 @@ const Index = () => {
 
             <CampaignHistory history={engine.history} />
 
-            <CustomerTable customers={customers!} />
+            <CustomerTable customers={scoredCustomers} />
           </>
         )}
       </main>

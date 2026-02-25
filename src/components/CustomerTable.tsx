@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
-import { Customer, openWhatsApp } from "@/lib/whatsapp";
+import { openWhatsApp } from "@/lib/whatsapp";
+import { ScoredCustomer } from "@/lib/scoring";
 import { SegmentBadge } from "./SegmentBadge";
+import { PriorityBadge } from "./PriorityBadge";
 import { Search, Send } from "lucide-react";
 
 interface Props {
-  customers: Customer[];
+  customers: ScoredCustomer[];
 }
 
 export function CustomerTable({ customers }: Props) {
@@ -24,7 +26,7 @@ export function CustomerTable({ customers }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b border-border">
-        <h2 className="text-lg font-semibold">Customers</h2>
+        <h2 className="text-lg font-semibold">Customers (Priority Sorted)</h2>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -55,6 +57,8 @@ export function CustomerTable({ customers }: Props) {
               <th className="px-4 py-3 text-left font-medium">Name</th>
               <th className="px-4 py-3 text-left font-medium">Phone</th>
               <th className="px-4 py-3 text-left font-medium">Segment</th>
+              <th className="px-4 py-3 text-left font-medium">Priority</th>
+              <th className="px-4 py-3 text-right font-medium">Score</th>
               <th className="px-4 py-3 text-right font-medium">Orders</th>
               <th className="px-4 py-3 text-right font-medium">Spent</th>
               <th className="px-4 py-3 text-right font-medium">Action</th>
@@ -63,7 +67,7 @@ export function CustomerTable({ customers }: Props) {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   No customers found
                 </td>
               </tr>
@@ -78,6 +82,10 @@ export function CustomerTable({ customers }: Props) {
                   <td className="px-4 py-3">
                     <SegmentBadge segment={c.segment} />
                   </td>
+                  <td className="px-4 py-3">
+                    <PriorityBadge level={c.priorityLevel} />
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-muted-foreground">{Math.round(c.priorityScore)}</td>
                   <td className="px-4 py-3 text-right">{c.total_orders}</td>
                   <td className="px-4 py-3 text-right">₹{c.total_spent.toLocaleString()}</td>
                   <td className="px-4 py-3 text-right">
