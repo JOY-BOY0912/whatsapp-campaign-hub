@@ -13,7 +13,9 @@ const SEGMENT_BONUS: Record<string, number> = {
 
 export function calculateScore(customer: Customer): number {
   const bonus = SEGMENT_BONUS[customer.segment] ?? 0;
-  return customer.total_spent * 0.6 + customer.total_orders * 0.3 + bonus;
+  const spent = customer.total_spent ?? 0;
+  const orders = customer.total_orders ?? 0;
+  return spent * 0.6 + orders * 0.3 + bonus;
 }
 
 export function getPriorityLevel(score: number): "HIGH" | "MEDIUM" | "LOW" {
