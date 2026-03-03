@@ -86,8 +86,8 @@ export function CustomerTable({ customers }: Props) {
                     <PriorityBadge level={c.priorityLevel} />
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-muted-foreground">{Math.round(c.priorityScore)}</td>
-                  <td className="px-4 py-3 text-right">{c.total_orders}</td>
-                  <td className="px-4 py-3 text-right">₹{c.total_spent.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right">{c.total_orders ?? 0}</td>
+                  <td className="px-4 py-3 text-right">₹{(c.total_spent ?? 0).toLocaleString()}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => openWhatsApp(c)}
